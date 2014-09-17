@@ -1,0 +1,53 @@
+INSERT INTO inventory.user_role (version, role_desc, role_id, role_type) 
+	VALUES (0, 'Granted all access', 1, 'admin');
+INSERT INTO inventory.user_role (version, role_desc, role_id, role_type) 
+	VALUES (0, 'Upload access', 2, 'team');
+INSERT INTO inventory.user_role (version, role_desc, role_id, role_type) 
+	VALUES (0, 'View access', 3, 'user');
+
+
+INSERT INTO inventory.`user` (version, password, user_id, user_name, user_role_id) 
+	VALUES (0, '1234', 1, 'admin', 1);
+INSERT INTO inventory.`user` (version, password, user_id, user_name, user_role_id) 
+	VALUES (0, '1234', 2, 'team', 2);
+INSERT INTO inventory.`user` (version, password, user_id, user_name, user_role_id) 
+	VALUES (0, '1234', 3, 'user', 3);
+
+
+INSERT INTO inventory.product (version, manufacturer, primary_part_number, product_id) 
+	VALUES (0, 'Sony', 'abcd1234', 1);
+INSERT INTO inventory.product (version, manufacturer, primary_part_number, product_id) 
+	VALUES (0, 'Ericsson', 'asdf1234', 2);
+INSERT INTO inventory.product (version, manufacturer, primary_part_number, product_id) 
+	VALUES (0, 'DLink', 'ghjk0987', 3);
+INSERT INTO inventory.product (version, manufacturer, primary_part_number, product_id) 
+	VALUES (0, 'Pelonis', '6785gbfd', 4);
+INSERT INTO inventory.product (version, manufacturer, primary_part_number, product_id) 
+	VALUES (0, 'Dell', 'klmn5423', 5);
+
+
+INSERT INTO inventory.product_detail (version, alt_part_number, det_type, detail_info, product_id, product_detail_id) 
+	VALUES (0, 'xxxxx', 'Description', 'A sony workstation', 1, 1);
+INSERT INTO inventory.product_detail (version, alt_part_number, det_type, detail_info, product_id, product_detail_id) 
+	VALUES (0, 'xxxxx', 'Notes', 'Random notes', 1, 2);
+INSERT INTO inventory.product_detail (version, alt_part_number, det_type, detail_info, product_id, product_detail_id) 
+	VALUES (0, 'xxxxx', 'Description', 'Ericsson router', 2, 3);
+INSERT INTO inventory.product_detail (version, alt_part_number, det_type, detail_info, product_id, product_detail_id) 
+	VALUES (0, '6789rgfds', 'Part', 'Part', 3, 4);
+INSERT INTO inventory.product_detail (version, alt_part_number, det_type, detail_info, product_id, product_detail_id) 
+	VALUES (0, 'xxxxx', 'Notes', 'Last quote 700', 5, 5);
+
+
+INSERT INTO inventory.pricing (version, no_of_pieces, part_number, pricing_date, pricing_id, pricing_per_unit, pricing_type, product_id, vendor) 
+	VALUES (0, 1500, 'abcd1234', '2014-04-23 00:00:00.0', 1, 1500.0, 'Quote', 1, 'XYZ');
+INSERT INTO inventory.pricing (version, no_of_pieces, part_number, pricing_date, pricing_id, pricing_per_unit, pricing_type, product_id, vendor) 
+	VALUES (0, 3000, 'abcd1234', '2013-04-23 00:00:00.0', 2, 1200.0, 'Source', 1, 'XYZ');
+INSERT INTO inventory.pricing (version, no_of_pieces, part_number, pricing_date, pricing_id, pricing_per_unit, pricing_type, product_id, vendor) 
+	VALUES (0, 200, 'asdf1234', '2014-04-23 00:00:00.0', 3, 100.0, 'Source', 2, 'ABC');
+INSERT INTO inventory.pricing (version, no_of_pieces, part_number, pricing_date, pricing_id, pricing_per_unit, pricing_type, product_id, vendor) 
+	VALUES (0, 1200, 'ghjk0987', '2014-04-23 00:00:00.0', 4, 10.0, 'Quote', 3, 'NMB');
+INSERT INTO inventory.pricing (version, no_of_pieces, part_number, pricing_date, pricing_id, pricing_per_unit, pricing_type, product_id, vendor) 
+	VALUES (0, 678, '6785gbfd', '2013-08-19 00:00:00.0', 5, 12.9, 'Source', 4, 'XYZ');
+INSERT INTO inventory.pricing (version, no_of_pieces, part_number, pricing_date, pricing_id, pricing_per_unit, pricing_type, product_id, vendor) 
+	VALUES (0, 23, '6785gbfd', '2013-12-10 00:00:00.0', 6, 20.87, 'Quote', 5, 'ASD');
+

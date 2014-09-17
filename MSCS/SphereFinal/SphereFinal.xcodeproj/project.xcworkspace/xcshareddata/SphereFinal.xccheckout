@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>474F3D56-1DD6-4B07-BBF7-74A89FC756FA</string>
+	<key>IDESourceControlProjectName</key>
+	<string>SphereFinal</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>40E13995-8F18-433E-A227-12F2B154016D</key>
+		<string>https://github.com/uditabose/MSCS.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>SphereFinal/SphereFinal.xcodeproj/project.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>40E13995-8F18-433E-A227-12F2B154016D</key>
+		<string>../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://github.com/uditabose/MSCS.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>110</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>40E13995-8F18-433E-A227-12F2B154016D</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>40E13995-8F18-433E-A227-12F2B154016D</string>
+			<key>IDESourceControlWCCName</key>
+			<string>MSCS</string>
+		</dict>
+	</array>
+</dict>
+</plist>

@@ -1,0 +1,476 @@
+
+'''
+    Author : Udita Bose
+    Poly ID : 0527963
+    Email : ub298@nyu.edu
+    
+    File System Checker for CS6233 
+    
+    
+    General file system structure
+    ------------------------------------------------
+    superBlock = linddata.0
+        contains a dictionary, mentioned in HW2 document
+    free block list = linddata.1 to linddata.25
+        each contains an list of size 400
+        values are eiather 1 = used block
+                       or  0 = free block
+        for blocks 0-26, blocks are always marked as 1
+    file type = regular or directory
+    directory inode = linddata.x
+        contains a dictionary, mentioned in HW2 document
+        must contain linkcount and filename_to_inode_dict entries
+    file inode = linddata.x
+        contains a dictionary, mentioned in HW2 document
+        must contain location and indirect entries
+        indirect = 0, 
+            linddata.<location> = data block of size 4096
+        indirect = 1
+            linddata.<location> = index list, max index number = 400 
+    -------------------------------------------------------------------      
+    This checker is fail-fast, so at the first inconsistency the checker
+    reports error code, and breaks out. So if the file system has n-number of
+    issues, then has to be run n-times.
+    
+'''
+
+# initialize file system check #################################################
+def _init_fs_check_(mp) :
+    '''
+    Initiates the file system checker. Calls the subsequent check methods. 
+    '''
+    # initializes the error no
+    _init_status_no()
+    
+    # the mount directory
+    mycontext['mountpoint'] = mp
+
+    # validate the mountpoint 
+    status = _check_mountpoint()
+
+    if(status != mycontext['STATUS']['OK']) :
+        print "Invalid filesystem mountpoint > ", mountpoint
+        return
+    else :
+        # check file system
+        status = _fs_checker()
+    
+    if(status != mycontext['STATUS']['OK']) :
+        print "Inconsistency found in file system : ERRNO ", status
+    else :
+        print "Consistent file system : ", status
+
+
+# initialize error status ######################################################
+def _init_status_no() :
+    '''
+    initiates the error numbers
+    '''
+    mycontext['STATUS'] = {}
+    mycontext['STATUS']['OK'] = 100 # all ok!
+    mycontext['STATUS']['I_MP'] = 200 # invalid mountpoint
+    mycontext['STATUS']['I_SB'] = 300 # invalid superblock metadata
+    mycontext['STATUS']['I_DID'] = 400 # invalid dev id
+    mycontext['STATUS']['I_TS'] = 500 # invalid timestamp
+    mycontext['STATUS']['M_BD'] = 600 # missing block data
+    mycontext['STATUS']['F_MFB'] = 600 # missing freeblock
+    mycontext['STATUS']['F_NFB'] = 700 # data in freeblock
+    mycontext['STATUS']['D_IP'] = 800 # invalid parent dir
+    mycontext['STATUS']['D_ILC'] = 900 # wrong numbers of link count
+    mycontext['STATUS']['F_ID'] = 1000 # wrong indirect
+    mycontext['STATUS']['F_BS'] = 1100 # wrong block size
+    
+    
+
+# just validate if the superblock metadata file exists #########################
+def _check_mountpoint() :
+    try:
+        parentdirpath = mycontext['mount']
+        #print mycontext['mount'], " - ", parentdirpath
+        sb = open(parentdirpath + '/linddata.0', 'r')
+    except IOError, e:
+        print "Mountpoint does not contain superblock ", parentdirpath
+        return mycontext['STATUS']['I_MP']
+    else :
+        mycontext['sbfd'] = sb
+        return mycontext['STATUS']['OK']
+
+
+# start file system check ######################################################
+def _fs_checker() :
+    status = mycontext['STATUS']['OK']
+
+    # consistency check on super block
+    status = _check_super_block()
+    if(status != mycontext['STATUS']['OK']) :
+        print "Inconsistent super block"
+        return status
+    
+    # consistency check on free blocks
+    status = _check_free_block()
+    if(status != mycontext['STATUS']['OK']) :
+        print "Inconsistent free block list"
+        return status
+    
+    # consistency check on each block type - direcory and file
+    status = _validate_block_type()
+    if(status != mycontext['STATUS']['OK']) :
+        print "Inconsistent block type"
+        return status
+    
+    return status
+
+
+# super block check ############################################################
+def _check_super_block():
+    """ 
+    validate super block
+    """
+    sbdatastring = mycontext['sbfd'].readline()
+    mycontext['sbfd'].close()
+
+    # deserializing the superblock metadata
+    sbdata = deserializedata(sbdatastring)
+    
+    # dev id should be 20
+    if(sbdata['devId'] != 20) :
+        print "Invalid device id"
+        return mycontext['STATUS']['I_DID']
+    
+    # this is hack as, no way I could figure out including the time 
+    # (or time like) module in repy
+    # creation time has to be in past
+    currentTime = 1399680294
+    if(int(sbdata['creationTime']) > currentTime) :
+        print "Invalid file creation time"
+        return mycontext['STATUS']['I_SB']
+    
+    # free start at 1
+    if(sbdata['freeStart'] < 1) :
+        print "Invalid free block start index"
+        return mycontext['STATUS']['I_SB']
+    
+    # free end at 25
+    if(sbdata['freeEnd'] > 25) :
+        print "Invalid free block end index"
+        return mycontext['STATUS']['I_SB']
+    
+    # max block fixed at 10,000
+    if(sbdata['maxBlocks'] > 10000) :
+        print "Invalid available blocks"
+        return mycontext['STATUS']['I_SB']
+    
+    # root at 26
+    if(sbdata['root'] != 26) :
+        print "Invalid root block index"
+        return mycontext['STATUS']['I_SB']
+
+    # stoing the metadata in memory for future reference
+    mycontext['blocks'][0] = sbdata
+
+    return mycontext['STATUS']['OK']
+
+
+# check free block consistency #################################################
+def _check_free_block():
+    """
+    consistency check for free block list
+        1. Making sure the free block list contains ALL of the free blocks
+        2. Make sure than there are no files/directories stored on items listed in the free block list
+    """
+    
+    # populate the block data fields
+    status = _prepare_blocks()
+    if(status != mycontext['STATUS']['OK']) :
+        # some metadata file reading error
+        print "Invalid block metadata"
+        return status
+    
+    # find which blocks are already consumed, 
+    # per the block level metadata, a convenience stuff
+    # possibly could be done better
+    _prepare_consumed_block()
+    
+    freeStart = mycontext['blocks'][0]['freeStart']
+    freeEnd = mycontext['blocks'][0]['freeEnd']
+    blknum = 0
+    for fblkcnt in xrange(freeStart, freeEnd + 1, 1) :
+        for fblk in mycontext['blocks'][fblkcnt] :
+            # if free block is zero, then, it should not be in consumed blocks
+            # else it definitely should be
+            if (fblk == 0 and (blknum in mycontext['consumedBlocks'])):
+                # free blocks says it's free, but consumed block says it's not
+                print "Free block is marked as used"
+                return mycontext['STATUS']['F_NFB']
+            elif(fblk == 1 and not(blknum in mycontext['consumedBlocks'])) :                
+                # free block says it's not free, but consumed block says it is
+                print "Used block marked as free"
+                return mycontext['STATUS']['F_MFB']
+                
+            blknum += 1
+    # consistency all ok
+    return mycontext['STATUS']['OK']
+
+    
+def _prepare_blocks():
+    """
+    populate the blocks list, creates 10,000 entries to the 
+    blocks array, validates if any block is missing
+    """
+
+    counter = mycontext['blocks'][0]['freeStart']
+    maxBlocks = mycontext['blocks'][0]['maxBlocks']
+    while(counter < maxBlocks) :
+        try:
+            f = open(mount['parent'] + '/linddata.' + str(counter), 'r')          
+        except IOError, e:
+            # found a missing block
+            print "A missing block : ", str(counter)
+            return mycontext['STATUS']['M_BD']
+        else :
+            # all good, storing the data in memory
+            fdatastring = f.next()
+            fdata = ""
+            if(len(fdatastring) != 0) :
+                fdata = deserializedata(fdatastring)
+            mycontext['blocks'][counter] = fdata
+        counter += 1
+            
+    return mycontext['STATUS']['OK']
+
+def _prepare_consumed_block():
+    """
+    prepares a list for consumed blocks this list is prepared as a 
+    convenience for further free-block consumed-block consistency checks
+    """
+    mycontext['blocks'] = {}
+    mycontext['consumedBlocks'] = []
+    blkcounter = 0
+    maxBlocks = mycontext['blocks'][0]['maxBlocks']
+    
+    freeStart = mycontext['blocks'][0]['freeStart']
+    freeEnd = mycontext['blocks'][0]['freeEnd']
+    
+    while(blkcounter in xrange(0, maxBlocks, 1)) :
+        # data type can be varied
+        # dictionary - for superBlock, directory and file inode
+        # list - for free block list, index list
+        # string - data blocks
+        # empty - free block
+        bdata = mycontext['blocks'][blkcounter]
+        # an afterthought - we really do not need to bother about
+        # data blocks here, as all the data blocks should be in one
+        # of index list or in location attribute of inode
+
+        if (type(bdata) == list) :
+            if(blkcounter >= freeStart and blkcounter <= freeEnd) :
+                # free block list, so no reading the content of the list, 
+                # but mark the block as a consumed block 
+                mycontext['consumedBlocks'].append(blkcounter)
+            else :
+                # this is an index list, marking this block as consumed
+                # mark all the blocks listed in this list as consumed as well
+                mycontext['consumedBlocks'].append(blkcounter)
+                for n in bdata :
+                    mycontext['consumedBlocks'].append(n)
+        elif (type(bdata) == dict) :
+            # mark this block as consumed block
+            mycontext['consumedBlocks'].append(blkcounter)
+            if(bdata.has_key('filename_to_inode_dict')) :
+                # if directory node has connected files
+                for n in bdata['filename_to_inode_dict'].values() :
+                    mycontext['consumedBlocks'].append(n)
+            elif(bdata.has_key('location')):  
+                # if this is a file node, then check indirect attribute
+                # and if inderect if 0, mark the value in location attribute
+                # as consumed block
+                # if indirect is 1, mark the value in location attribute
+                # as consumed block, then leave it, cause the 'if' block already
+                # does a check on index list 
+                mycontext['consumedBlocks'].append(bdata['location'])
+        
+
+  
+def _check_block_type():
+    """
+    block type specific checks
+    directory : 
+      validate link count 
+    file :
+      validate indirect, data block
+    index (am not really sure :():
+      validate this index is keyed to some file's location attribute
+      validate this inode and all inodes are consumed
+
+    Not checking the super block - done at the begining of checks
+    Not cheking the free blocks list - done at the 2nd step
+    """
+       
+    maxBlocks = mycontext['blocks'][0]['maxBlocks']
+    freeEnd = mycontext['blocks'][0]['freeEnd']
+    
+    while(blkcounter in  xrange(freeEnd + 1, maxBlocks, 1)) :
+        if (type(bdata) == dict) :
+            # directory, file inodes
+            # won't touch the character device file
+            if IS_DIR(mycontext['blocks'][blkcounter]['mode']):
+                # found a directory
+                status = _check_dir_type(mycontext['blocks'][blkcounter], blkcounter)
+            elif IS_REG(mycontext['blocks'][blkcounter]['mode']) :
+                # found a file
+                status = _check_reg_type(mycontext['blocks'][blkcounter], blkcounter)
+            
+            if(status != mycontext['STATUS']['OK']) :
+                print "Inconsistency in block type data"
+                return status
+            
+    return mycontext['STATUS']['OK']
+
+        
+def _check_dir_type(dirblock, thisinode):
+    """
+    checks the directory block for consistency
+    """
+    
+    currentTime = 1399680294
+    if not(dirblock.has_key('ctime') and dirblock.has_key('atime') and dirblock.has_key('mtime') ) :
+        # creation, access, modified time can not be done away with
+        print "Dir : Creation, access and modified time has to be in metadata"
+        return mycontext['STATUS']['I_TS']
+    
+    if (dirblock['ctime'] > currentTime or dirblock['atime'] > currentTime or dirblock['mtime'] > currentTime):
+        # none of the time can be in future
+        print "Dir : Creation, access and modified time has to be in past"
+        return mycontext['STATUS']['I_TS']
+    
+    
+    if not(dirblock.has_key('linkcount')) :
+        # minimum link count is 2, one for self, one for parent 
+        print "Dir : No linkcount"
+        return mycontext['STATUS']['D_ILC']
+    linkcount = dirblock['linkcount']
+    
+    if linkcount < 2:
+        # minimum link count is 2, one for self, one for parent 
+        print "Dir : Minimum linkcount is 2"
+        return mycontext['STATUS']['D_ILC']
+    
+    if not(dirblock.has_key('filename_to_inode_dict')) :
+        # has to have a filename_to_inode_dict, with minimum 2 linked inode
+        print "Dir : no filename_to_inode_dict"
+        return mycontext['STATUS']['D_ILC']
+    
+    linkedinodes = dirblock['filename_to_inode_dict']
+
+    if(linkcount != len(linkedinodes)) :
+        # if these 2 count do not match, then just crash!!
+        print "Dir : linkcount mismatch"
+        return mycontext['STATUS']['D_ILC']
+    
+    if((not linkedinodes.has_key('.')) or (thisinode != linkedinodes['.'])) :
+        # major whoopla! this dir does not have a pointer to self!
+        print "Dir : Inconsistent self link"
+        return mycontext['STATUS']['D_ILC']
+    
+    if not (linkedinodes.has_key('..')) :
+        # major whoopla level 2! this dir does not have a pointer to parent!
+        # bad kid!
+        print "Dir : No link to parent"
+        return mycontext['STATUS']['D_ILC']
+    
+    parentinode = linkedinodes['..']
+    if not(blocks.has_key(parentinode)):
+        # really weird, there is no parent - bad 
+        return mycontext['STATUS']['D_IP']
+        
+    parentblock = mycontext['blocks'][linkedinodes['..']]
+    
+    if not IS_DIR(parentblock['mode']):
+        # super strange, parent is not a dir
+        print "Dir : Parent is not a directory"
+        return mycontext['STATUS']['D_IP']
+    
+    if not (parentblock.has_key('filename_to_inode_dict')):
+        # this part is repeatitious, as at the the parent dir
+        # is tested, it will validate this again
+        # but in our fs, we have fixed inodes (0-10000)
+        # and at some point of time, due to deletion and creation
+        # without any particular order, it may happen that a block
+        # will have a parent with higher inode, so can not assume
+        # that a parent block is always tested before child
+        print "Dir : Parent does not contain a link to this directory"
+        return mycontext['STATUS']['D_IP']
+    
+    if not thisinode in parentblock['filename_to_inode_dict'].values() :
+        # well, boom, parent does not have key for child
+        # creation(?)/deletion(?) gone bad or something exponentially
+        # more freak-worthy
+        print "Dir : Parent does not contain a link to this directory"
+        return mycontext['STATUS']['D_IP']
+    
+    return mycontext['STATUS']['OK']
+        
+      
+def _check_reg_type(regblock, thisinode):
+    """
+    checks the file (regular file) block for consistency
+    """
+    currentTime = 1399680294
+    if not(regblock.has_key('ctime') and regblock.has_key('atime') and regblock.has_key('mtime') ) :
+        # creation, access, modified time can not be done away with
+        print "File : Creation, access and modified time has to be in metadata"
+        return mycontext['STATUS']['I_TS']
+    
+    if (regblock['ctime'] > currentTime or regblock['atime'] > currentTime or regblock['mtime'] > currentTime):
+        # none of the time can be in future
+        print "File : Creation, access and modified time has to be in past"
+        return mycontext['STATUS']['I_TS']
+    
+    if not(regblock.has_key('indirect')) :
+        # no indirect - that should not happen
+        print "File :No indirect"
+        return mycontext['STATUS']['F_ID']
+    
+    if not(regblock.has_key('location')) :
+        # no location - no data, that should not happen
+        print "File : No location"
+        return mycontext['STATUS']['F_ID']
+    
+    indirect = regblock['indirect']
+    bdata = mycontext['blocks'][regblock['location']]
+     
+    if indirect == 0:
+        if (type(bdata) != str):
+            # location contains should contain data
+            print "File : indirect = 0, location with invalid data"
+            return mycontext['STATUS']['F_ID']
+        elif (len(bdata) > 4096):
+            # data length should not go beyond size of a block
+            print "File : indirect = 0, data larger than a block"
+            return mycontext['STATUS']['F_BS']
+        elif regblock['size'] > 4096 :
+            # if data length is more than 4096, then indirect should be 1
+            print "File : indirect = 0, size should be less than or equal to block size"
+            return mycontext['STATUS']['F_BS']
+    
+    if indirect == 1 :
+        if(type(bdata) != list):
+            # location contains should contain index list
+            print "File : indirect = 1, location with invalid data"
+            return mycontext['STATUS']['F_ID']
+        elif regblock['size'] <= 4096 :
+            # if data length is less than or equal 4096, then indirect should be 0
+            print "File : indirect = 1, data should be larger than a block"
+            return mycontext['STATUS']['F_BS']
+        else :
+            bdatalen = len(bdata)
+            if not((bdatalen * 4096) >= regblock['size'] and (bdatalen-1 * 4096) < regblock['size']):
+                print "File : indirect = 1, data size and number of used block inconsistent"
+                return mycontext['STATUS']['F_BS']
+            
+    return mycontext['STATUS']['OK']
+
+
+if callfunc == 'initialize':
+    print "Checking the CS6233 FileSystem"
+    _init_fs_check_() 

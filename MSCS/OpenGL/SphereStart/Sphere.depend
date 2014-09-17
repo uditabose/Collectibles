@@ -1,0 +1,48 @@
+# depslib dependency file v1.0
+1392336937 source:/home/papa/studyspace/CS6533/HW/Sphere/src/InitShader.cpp
+	<stdio.h>
+	<stdlib.h>
+	"Angel-yjc.h"
+
+1374706330 /home/papa/studyspace/CS6533/HW/Sphere/src/Angel-yjc.h
+	<cmath>
+	<iostream>
+	<OpenGL/OpenGL.h>
+	<GLUT/glut.h>
+	<GL/glew.h>
+	<GL/glut.h>
+	"vec.h"
+	"mat-yjc-new.h"
+	"CheckError.h"
+
+1368480071 /home/papa/studyspace/CS6533/HW/Sphere/src/vec.h
+	"Angel-yjc.h"
+
+1395325684 /home/papa/studyspace/CS6533/HW/Sphere/src/mat-yjc-new.h
+	"vec.h"
+	<math.h>
+	<iostream>
+	<cstdio>
+
+1368480071 /home/papa/studyspace/CS6533/HW/Sphere/src/CheckError.h
+	<stdio.h>
+	<GL/gl.h>
+
+1396279217 source:/home/papa/studyspace/CS6533/HW/Sphere/src/RollingSphere.cpp
+	<iostream>
+	<fstream>
+	<sstream>
+	<math.h>
+	<vector>
+	<string>
+	"Angel-yjc.h"
+
+1396448694 source:/home/papa/studyspace/CS6533/HW/Sphere/src/bose_udita_2.cpp
+	<iostream>
+	<fstream>
+	<sstream>
+	<math.h>
+	<vector>
+	<string>
+	"Angel-yjc.h"
+

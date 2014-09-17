@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="Sphere" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/Sphere" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-lGL -lGLU -lglut -lGLEW" />
+				</Compiler>
+				<Linker>
+					<Add library="GLEW" />
+					<Add library="glut" />
+					<Add library="GL" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/Sphere" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Unit filename="src/Angel-yjc.h" />
+		<Unit filename="src/CheckError.h" />
+		<Unit filename="src/InitShader.cpp" />
+		<Unit filename="src/bose_udita_2.cpp" />
+		<Unit filename="src/fshader42.glsl" />
+		<Unit filename="src/mat-yjc-new.h" />
+		<Unit filename="src/vec.h" />
+		<Unit filename="src/vshader42.glsl" />
+		<Extensions>
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
