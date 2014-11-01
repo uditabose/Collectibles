@@ -55,6 +55,10 @@ class LinkedList {
             return headNode;
         }
 
+        void setHead(Node<T>* head) {
+            headNode = head;
+        }
+
         /**
         * Returns a node at nodeIndex, iff nodeIndex is valid
         */
@@ -194,6 +198,29 @@ void printReverseSentence(LinkedList<T>* wordList, int noOfPieces=0) {
         cout << " ";
     }
     cout << endl;
+}
+
+template<typename T>
+void reversedList(LinkedList<T>* wordList) {
+	Node<T> *head = wordList->getHead();
+    Node<T> *tail = head;
+    Node<T> *target = head->getNext();
+    
+    while(target != 0) {
+        Node<T> *tempTarget = target->getNext();
+        target->setNext(head);
+        tail->setNext(tempTarget);
+        head = target;
+        target = tempTarget;
+        printNode(head);
+        cout << endl;
+    }
+    
+    cout << "Final reversed " << endl;
+    wordList->setHead(head);
+    printNode(wordList->getHead());
+    cout << endl;
+	
 }
 
 /**
@@ -358,6 +385,8 @@ int main(int argc, char* argv[]) {
             LinkedList<char>* wordList = new LinkedList<char>[noOfWordsInSentence];
 
             splitList(&linkedList, wordList, *wordSep);
+            
+            reversedList(&linkedList);
 
             printReverseSentence(wordList, noOfWordsInSentence);
 

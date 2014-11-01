@@ -12,7 +12,7 @@ import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.ImageIcon;
-import learning.promodoro.logic.PromodoroListMonitor;
+import learning.promodoro.store.PromodoroListMonitor;
 
 /**
  *

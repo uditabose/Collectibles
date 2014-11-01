@@ -7,7 +7,7 @@ package learning.promodoro;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import learning.promodoro.logic.PromodoroListMonitor;
+import learning.promodoro.store.PromodoroListMonitor;
 import learning.promodoro.tray.PromodoroTrayMonitor;
 
 /**

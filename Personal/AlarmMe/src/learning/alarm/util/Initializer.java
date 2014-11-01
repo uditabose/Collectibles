@@ -22,7 +22,7 @@ public class Initializer {
     public void initialize() throws IOException {
     
         // TODO : Take an input folder path
-        String configFolderPath = "D:\\Learning\\AlarmMe";
+        String configFolderPath = "/Users/michaelgerstenfeld/studyspace/";
         
         Properties properties = new Properties();
         properties.load(new FileInputStream(new File(configFolderPath, Constants.INIT.CONFIG_FILE)));

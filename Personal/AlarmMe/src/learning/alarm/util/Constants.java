@@ -9,7 +9,7 @@ package learning.alarm.util;
  * @author ubose
  */
 public class Constants {
-    public static final String TIMESTAMP_STORE = "C:\\Documents and Settings\\ubose\\time\\timestamp.log";
+    public static final String TIMESTAMP_STORE = "/Users/michaelgerstenfeld/studyspace/timestamp.log";
     public static final String Just = "just";
     public class PROPERTY {
         public static final String IN = "intime";

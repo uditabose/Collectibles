@@ -1,7 +1,4 @@
-/*
- * To change this template, choose Tools | Templates and open the template in
- * the editor.
- */
+
 package learning.alarm;
 
 import learning.alarm.timer.AlarmTimeStore;
@@ -17,8 +14,6 @@ public class AlarmMe {
 
     public static void main(String[] args) {
         AlarmTimeStore alarmTimeStore = new AlarmTimeStore();
-        //AlarmTimer alarmTimer = new AlarmTimer(alarmTimeStore);
-        //alarmTimer.startTimer();
 
         AlarmTrayCreator alarmTrayCreator = new AlarmTrayCreator(alarmTimeStore);
         alarmTrayCreator.createTrayIcon();

@@ -1,7 +1,4 @@
-/*
- * To change this template, choose Tools | Templates and open the template in
- * the editor.
- */
+
 package learning.alarm.timer;
 
 import java.io.BufferedWriter;
@@ -107,11 +104,8 @@ public class AlarmTimeStore {
 
         try {
             BufferedWriter bw = new BufferedWriter(new FileWriter(TIMESTAMP_STORE, true));
-
             bw.append(logBuilder);
-
             bw.flush();
-
             bw.close();
         } catch (Exception e) {
             // do nothing

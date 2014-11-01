@@ -1,7 +1,4 @@
-/*
- * To change this template, choose Tools | Templates and open the template in
- * the editor.
- */
+
 package learning.promodoro.tray;
 
 import java.awt.*;
@@ -10,7 +7,7 @@ import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.ImageIcon;
-import learning.promodoro.logic.PromodoroListMonitor;
+import learning.promodoro.store.PromodoroListMonitor;
 
 /**
  *
