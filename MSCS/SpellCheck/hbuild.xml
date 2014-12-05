@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="SpellCheck" default="all" basedir=".">
+    <!-- libraries -->
+    <property name="thrift.lib" value="/Users/michaelgerstenfeld/Applications/thrift/lib/java/build/libthrift-1.0.0.jar"/>
+    <property name="lib.dir" value="/Users/michaelgerstenfeld/Applications/thrift/lib/java/build/lib"/>
+    
+    <!-- main classes -->
+    <property name="client-main" value="cs6253.project.SpellClient"/>
+    <property name="server-main" value="cs6253.project.SpellServer"/>
+    
+    <!-- jar file -->
+    <property name="src-dir" value="build"/>
+    <property name="jar-dir" value="build"/>
+    <property name="class-dir" value="classes"/>
+    <property name="jar-name" value="SpellCheck.jar"/>
+    
+    
+    <!-- all -->
+    <target name="all" depends="clean, compile, build"></target>
+    
+    <!-- clean -->
+    <target name="clean">
+        <delete dir="build"/>
+    </target>
+    
+    <!-- compile -->
+    <target name="compile">
+        <mkdir dir="${jar-dir}/${class-dir}"/>
+        <javac srcdir="${src-dir}" destdir="${jar-dir}/${class-dir}">
+            <classpath>
+                <pathelement location="${thrift.lib}"/>
+                <fileset dir="${lib.dir}" includes="*.jar"/>
+            </classpath>
+        </javac>
+    </target>
+    
+    <!-- build -->
+    <target name="build">
+        <jar destfile="${jar-dir}/${jar-name}" basedir="${jar-dir}/${class-dir}"/>
+    </target>
+    
+    <!-- client run -->
+    <target name="client-run">
+        <java fork="true" classname="${client-main}">
+            <classpath>
+                <path location="${jar-dir}/${jar-name}"/>
+                <pathelement location="${thrift.lib}"/>
+                <fileset dir="${lib.dir}" includes="*.jar"/>
+            </classpath>
+        </java>
+    </target>
+    
+    <!-- server run -->
+    <target name="client-run">
+        <java fork="true" classname="${server-main}">
+            <classpath>
+                <path location="${jar-dir}/${jar-name}"/>
+                <pathelement location="${thrift.lib}"/>
+                <fileset dir="${lib.dir}" includes="*.jar"/>
+            </classpath>
+        </java>
+    </target>
+</project>
