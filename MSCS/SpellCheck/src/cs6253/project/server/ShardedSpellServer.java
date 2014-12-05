@@ -19,14 +19,20 @@ import org.apache.thrift.transport.TServerTransport;
 
 /**
  * CS6253 - Project 3
- * A simple spell server and client based on Apache Thrift
+ * Sharding For Scalability
  * 
- * The SpellServer class is responsible for creating and 
+ * The ShardedSpellServer class is responsible for creating and 
  * starting the server thread.
  * 
- * SpellServer listens for incoming spell check requests at the 
+ * ShardedSpellServer listens for incoming spell check requests at the 
  * designated port. When a request arrives, it invokes the processor,
  * which handles the spell checking logic.
+ * 
+ * ShardedSpellServer lazy loads the dictionary. When the first request
+ * arrives, it determines the least significant bit of MD5 hash of the
+ * first word in the list. Ex: for a list ["abc", "def", "ijk"], it
+ * computes the MD5 hash of "abc", and tests it's least-significant bit.
+ * If the bit is zero (0) then loads the shard_0_words, else shard_1_words
  * 
  * @author Udita <udita.bose@nyu.edu>
  */
@@ -76,6 +82,7 @@ public class ShardedSpellServer {
         /* DEBUG ----
             args = new String[]{"6789"};
          */
+        
         if (args.length >= 1) {
             // use user supplied port
             serverPort = Integer.parseInt(args[0]);
@@ -118,7 +125,7 @@ class ShardedSpellHandler implements SpellService.Iface {
         System.out.println(toCheckList);
         
         ShardedSpellDictionary dictionary = 
-                new ShardedSpellDictionary(ShardingUtil.getLeastSignificantBit(toCheckList.get(0)));
+                ShardedSpellDictionary.getInstanceForShard(ShardingUtil.getLeastSignificantBit(toCheckList.get(0)));
 
         for (String stringToCheck : toCheckList) {
             checkedList.add(dictionary.isWordFound(stringToCheck));         
@@ -127,7 +134,6 @@ class ShardedSpellHandler implements SpellService.Iface {
         SpellResponse response = new SpellResponse(checkedList);
         return response;
     }
-
 }
 
 /**
@@ -139,18 +145,29 @@ class ShardedSpellHandler implements SpellService.Iface {
 class ShardedSpellDictionary {
     
     // cache for the linux wordlist
-    private final Set<String> _dictionary = new HashSet<String>();
+    private static final Set<String> _dictionary = new HashSet<>();
+    
+    private static class Holder {
+        private static final ShardedSpellDictionary SSD = new ShardedSpellDictionary();
+    }
     
     // static block, loads the word list at the time of class loading
-    ShardedSpellDictionary(int dictionaryShard){
-        // load only if empty
-        if (_dictionary.isEmpty()) {
-            loadDictionary(dictionaryShard);
-        }
+    private ShardedSpellDictionary(){
+        // private constructor to prevent instantiation
+    }
+    
+    // loads the shard file, and return the ShardedSpellDictionary instance
+    public static ShardedSpellDictionary getInstanceForShard(int dictionaryShard) {
+        Holder.SSD.loadDictionary(dictionaryShard);
+        return Holder.SSD;
     }
 
     //Loads the dictionary
     private void loadDictionary(int dictionaryShard) {
+        if (!_dictionary.isEmpty()) {
+            return;
+        }
+        System.out.println("Loading dictionary : " + dictionaryShard);
         BufferedReader br = null;
         try {
             // buffered reader used as it exposes the readLine() method
@@ -159,7 +176,7 @@ class ShardedSpellDictionary {
             String line = null;
             while ((line = br.readLine()) != null) {
                 // converted to lower case to avoid case-sensitivity
-                _dictionary.add(line.trim()); 
+                _dictionary.add(line); 
             }
         } catch (Exception ex) {
             System.err.println(" Can't load dictionary : " + ex.getMessage());
@@ -175,7 +192,6 @@ class ShardedSpellDictionary {
     }
 
     /**
-     * 
      * @param word word to be spell-checked
      * @return true, if available in dictionary, otherwise false 
      */

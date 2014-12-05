@@ -27,31 +27,40 @@ import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 
 /**
- *
- * @author Udita
+ * CS6253 - Project 3
+ * Sharding For Scalability
+ * 
+ * The client accepts 2 server credentials file, and request timeout
+ * and a list of words.
+ * 
+ * Client shards the word list and initiates threads, connecting the servers
+ * one for each shard. The also creates a monitor to
+ * 
+ * @author Udita <udita.bose@nyu.edu>
  */
 public class ShardedFaultTolerantClient {
 
     public static void main(String[] args) {
 
         /**
-         * DEBUG ---- */
+         * DEBUG ----
          
         args = new String[]{"/Users/michaelgerstenfeld/Google Drive/MSCS/FALL14/CS6253/Homeworks/servers0",
             "/Users/michaelgerstenfeld/Google Drive/MSCS/FALL14/CS6253/Homeworks/servers1",
             "2", "accomplish", "sPdeR",
             "accoplish", "with", "sPendeR", "uppermost".toUpperCase(),
             "upp".toUpperCase(), "wih"};
-        
+         */
         
         if (args.length < 3) {
             System.err.println("Invalid number of arguements "
                     + "\n Valid command is : "
-                    + "java -cp SpellCheck.jar cs6253.project.client.ShardedFaultTolerantClient "
+                    + "java -cp <path_to>/SpellCheck.jar cs6253.project.client.ShardedFaultTolerantClient "
                     + "<shard0_server_ip_file> <shard1_server_ip_file> <timeout> [word_list] ");
             System.exit(1);
         }
 
+        // server ips and ports
         Queue<String[]> shard0ServerCredentials = extractServerIps(args[0]);
         Queue<String[]> shard1ServerCredentials = extractServerIps(args[1]);
 
@@ -66,16 +75,21 @@ public class ShardedFaultTolerantClient {
         for (int i = 3; i < args.length; i++) {
             wordList.add(args[i]);
         }
-        
+
+        // starts the requests to servers
         requestServers(shard0ServerCredentials, shard1ServerCredentials, wordList, serverTimeout);
     }
 
     /**
      *
      * @param serverIpFilePath - a file containing server ip and port as
-     * blank-space separated string, one server per line ex : <server_ip>
-     * <server_port>
-     * 192.168.1.2 12345 192.168.10.89 45678 ...
+     *     blank-space separated string, one server per line ex : 
+     *     <server_ip> <server_port>
+     *     192.168.1.2 12345 
+     *     192.168.10.89 45678 
+     *     ...
+     * @return returns array of server ip-port queues
+     * 
      */
     private static Queue<String[]> extractServerIps(String serverIpFilePath) {
         Queue<String[]> serverQueue = new LinkedList<>();
@@ -113,30 +127,45 @@ public class ShardedFaultTolerantClient {
     }
 }
 
+/**
+ * Monitors the client state, that is if 
+ * a server communication is failed, if new connection should 
+ * be initiated, and if all the servers are communicated and
+ * combines the result from servers 
+ * @author Udita <udita.bose@nyu.edu>
+ */
 class ClientStateMonitor { 
     // state of the client it is monitoring
         // 0 = at begining
         // 1 = done
         // 2 = start new
     private List<ClientRequestCommand> clientRequestCommands = null;
-    private int noOfFinished = 0;
-    private List<String> wordList = null;
+    private int noOfFinished = 0; // no of completed shards
+    private List<String> wordList = null; // the full word list
 
     ClientStateMonitor(List<String> wordList) {
         this.wordList = wordList;
     }
     
+    /**
+     * 
+     * @param clientState sets the state of the server communication
+     * @param commandId which shard
+     */
     void setClientState(int clientState, int commandId) {
-        if (clientState == 2) {
+        
+        if (clientState == 1) {
+            // shard has finished, may successful or failed
+            noOfFinished++;
+        } else if (clientState == 2) {
+            // either failed so start new, or just start
             setClientState(0, commandId);
             runCommand(commandId);
-        } else if (clientState == 1) {
-            noOfFinished++;
         }
         
+        // if all shards are done, removes the correct words from the word list
         if (noOfFinished == clientRequestCommands.size()) {
             for (ClientRequestCommand clientRequestCommand : clientRequestCommands) {
-                //clientRequestCommand.stopCommand();
                 this.wordList.removeAll(clientRequestCommand.getCorrectWordList());
             }
             System.out.println("Final list : " + this.wordList);
@@ -144,6 +173,11 @@ class ClientStateMonitor {
         }
     }
     
+    /**
+     * initiates the client-server communication
+     * @param queue server ip port
+     * @param serverTimeout request timeout
+     */
     void initiateClients(Queue[] queue,  int serverTimeout) {
 
         List[] shardLists = ShardingUtil.populateWordLists(wordList);
@@ -171,7 +205,7 @@ class ClientStateMonitor {
         this.clientRequestCommands.add(clientRequestCommand);
 
         scheduledExecutorService.scheduleAtFixedRate(clientRequestTimer, 0, 
-                        serverTimeout/100, TimeUnit.MILLISECONDS);
+                        serverTimeout/1000, TimeUnit.MILLISECONDS);
     }
 
     private void runCommand(final int commandId) {
@@ -187,6 +221,11 @@ class ClientStateMonitor {
     }
 }
 
+/**
+ * Executes spellcheck operation and updates the client monitor
+ * status
+ * @author Udita <udita.bose@nyu.edu>
+ */
 class ClientRequestCommand {
     private int id = 0;
     private Queue<String[]> serverCredentials = null;
@@ -202,6 +241,10 @@ class ClientRequestCommand {
         this.clientStateListener = clientStateListener;
     }
 
+    /**
+     * connects to next server,
+     * updates the client state monitor
+     */
     void command() {        
         try {
             // binds the server
@@ -240,6 +283,10 @@ class ClientRequestCommand {
         }
     }
     
+    /**
+     * 
+     * @return only the correct words
+     */
     List<String> getCorrectWordList() {
         return this.wordList;
     }
@@ -256,6 +303,14 @@ class ClientRequestCommand {
     }  
 }
 
+/**
+ * This is background thread for each shard server communication,
+ * keeps on checking if the request is taking more time than server timeout,
+ * if so then updates the state of Client State Monitor, so that new server
+ * can be communicated
+ * 
+ * @author Udita <udita.bose@nyu.edu>
+ */
 class ClientRequestTimer implements Runnable {
     private ClientStateMonitor clientStateListener = null;
     private int timeout = 0;
