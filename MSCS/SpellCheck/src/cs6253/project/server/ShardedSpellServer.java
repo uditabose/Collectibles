@@ -116,7 +116,7 @@ class ShardedSpellHandler implements SpellService.Iface {
      */
     @Override
     public SpellResponse spellcheck(SpellRequest request) throws TException {
-        
+        System.out.println("In spell check");
         // the return list
         List<Boolean> checkedList = new ArrayList<>();
         
@@ -130,6 +130,7 @@ class ShardedSpellHandler implements SpellService.Iface {
         for (String stringToCheck : toCheckList) {
             checkedList.add(dictionary.isWordFound(stringToCheck));         
         }
+        System.out.println("checkedList : " + checkedList);
         // response wrapper
         SpellResponse response = new SpellResponse(checkedList);
         return response;
@@ -196,6 +197,7 @@ class ShardedSpellDictionary {
      * @return true, if available in dictionary, otherwise false 
      */
     public boolean isWordFound(String word) {
+        System.out.println("Server : isWordFound : " + word);
         word = word.charAt(0) + word.substring(1).toLowerCase();
         return _dictionary.contains(word.trim());
     }

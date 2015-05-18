@@ -43,14 +43,14 @@ public class ShardedFaultTolerantClient {
     public static void main(String[] args) {
 
         /**
-         * DEBUG ----
+         * DEBUG ---- */
          
         args = new String[]{"/Users/michaelgerstenfeld/Google Drive/MSCS/FALL14/CS6253/Homeworks/servers0",
             "/Users/michaelgerstenfeld/Google Drive/MSCS/FALL14/CS6253/Homeworks/servers1",
             "2", "accomplish", "sPdeR",
             "accoplish", "with", "sPendeR", "uppermost".toUpperCase(),
             "upp".toUpperCase(), "wih"};
-         */
+        
         
         if (args.length < 3) {
             System.err.println("Invalid number of arguements "
@@ -121,7 +121,7 @@ public class ShardedFaultTolerantClient {
 
     private static void requestServers(Queue<String[]> shard0ServerCredentials, 
             Queue<String[]> shard1ServerCredentials, List<String> wordList, int serverTimeout) {
-        
+        System.out.println("Requesting servers");
         ClientStateMonitor clientStateMonitor = new ClientStateMonitor(wordList);
         clientStateMonitor.initiateClients(new Queue[]{shard0ServerCredentials, shard1ServerCredentials}, serverTimeout);
     }
@@ -132,7 +132,6 @@ public class ShardedFaultTolerantClient {
  * a server communication is failed, if new connection should 
  * be initiated, and if all the servers are communicated and
  * combines the result from servers 
- * @author Udita <udita.bose@nyu.edu>
  */
 class ClientStateMonitor { 
     // state of the client it is monitoring
@@ -166,7 +165,9 @@ class ClientStateMonitor {
         // if all shards are done, removes the correct words from the word list
         if (noOfFinished == clientRequestCommands.size()) {
             for (ClientRequestCommand clientRequestCommand : clientRequestCommands) {
-                this.wordList.removeAll(clientRequestCommand.getCorrectWordList());
+                clientRequestCommand.stopCommand();
+                System.out.println(clientRequestCommand.getCorrectWordList());
+                //this.wordList.removeAll(clientRequestCommand.getCorrectWordList());
             }
             System.out.println("Final list : " + this.wordList);
             System.exit(0);
@@ -179,15 +180,18 @@ class ClientStateMonitor {
      * @param serverTimeout request timeout
      */
     void initiateClients(Queue[] queue,  int serverTimeout) {
-
+        System.out.println("Initiationg clients");
         List[] shardLists = ShardingUtil.populateWordLists(wordList);
         
         // will try to connect one available server
         if (clientRequestCommands == null) {
             clientRequestCommands = new ArrayList<>();
+        } else {
+            clientRequestCommands.clear();
         }
         
         for (int i = 0; i < queue.length; i++) {
+            System.out.println("In the loop to initiate client");
             initiateClient(queue[i], shardLists[i], serverTimeout, i + 1);
         }
         
@@ -203,6 +207,9 @@ class ClientStateMonitor {
         ClientRequestCommand clientRequestCommand = 
                 new ClientRequestCommand(shardServerCredentials, shardList, this, commandId);
         this.clientRequestCommands.add(clientRequestCommand);
+        System.out.println("Command is starting for : " + commandId);
+        System.out.println("shardList > " + shardList);
+        this.setClientState(2, commandId);
 
         scheduledExecutorService.scheduleAtFixedRate(clientRequestTimer, 0, 
                         serverTimeout/1000, TimeUnit.MILLISECONDS);
@@ -213,7 +220,8 @@ class ClientStateMonitor {
 
             @Override
             public void run() {
-                clientRequestCommands.get(commandId - 1).closeTransport();
+                //clientRequestCommands.get(commandId - 1).closeTransport();
+                System.out.println("In runCommand for > " + commandId);
                 clientRequestCommands.get(commandId - 1).command();
             }
         };
@@ -230,6 +238,7 @@ class ClientRequestCommand {
     private int id = 0;
     private Queue<String[]> serverCredentials = null;
     private List<String> wordList = null;
+    private List<Boolean> isCorrectList = null;
     private ClientStateMonitor clientStateListener = null;
     private TTransport transport = null;
 
@@ -249,6 +258,7 @@ class ClientRequestCommand {
         try {
             // binds the server
             String[] serverCred = serverCredentials.poll();
+            System.out.println("interface command : serverCred > " + serverCred);
             if (serverCred == null) {
                 this.clientStateListener.setClientState(1, this.id);
                 return;
@@ -266,15 +276,10 @@ class ClientRequestCommand {
 
             // sending the request to the server
             SpellResponse checkedList = client.spellcheck(request);
-            List<Boolean> isCorrectList = checkedList.getIs_correct();
+            isCorrectList = checkedList.getIs_correct();
+            
+            System.out.println("Response from server : " + this.id + " : " + isCorrectList);
 
-            List<String> correctList = new ArrayList<>();
-            for (int spCnt = 0; spCnt < isCorrectList.size(); spCnt++) {
-                if (isCorrectList.get(spCnt)) {
-                    correctList.add(wordList.get(spCnt));
-                }
-            }
-            this.wordList = correctList;
             this.clientStateListener.setClientState(1, this.id);
         } catch (TException x) {
             System.err.println(" Exception : " + x.getMessage());
@@ -288,7 +293,13 @@ class ClientRequestCommand {
      * @return only the correct words
      */
     List<String> getCorrectWordList() {
-        return this.wordList;
+        List<String> correctList = new ArrayList<>();
+        for (int spCnt = 0; spCnt < isCorrectList.size(); spCnt++) {
+            if (isCorrectList.get(spCnt)) {
+                correctList.add(wordList.get(spCnt));
+            }
+        }
+        return correctList;
     }
     
     void stopCommand() {
