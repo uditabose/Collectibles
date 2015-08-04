@@ -12,7 +12,7 @@ import static util.SortUtil.*;
 public class SumOfTwo {
     
     /**
-     * O(logN) approach
+     * O(NlogN) approach
      * 
      * 
      * @param inputArray
