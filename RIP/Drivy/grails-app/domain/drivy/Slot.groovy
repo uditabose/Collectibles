@@ -1,10 +1,15 @@
 package drivy
 
 class Slot {
-    
+
+    Integer slotNumber
     Date slotDate
-    Integer timeFrom
-    Integer timeTo
+    String timeFrom
+    String timeTo
+    Boolean isRegistered
+    Boolean isBooked
+    
+    static belongsTo = [teacher:Teacher]
     
     static constraints = {
     }
