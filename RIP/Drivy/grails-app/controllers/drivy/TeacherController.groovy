@@ -1,6 +1,7 @@
 package drivy
 
 import java.text.SimpleDateFormat
+import java.text.ParseException
 
 //import SlotUtil
 
@@ -32,7 +33,11 @@ class TeacherController {
     def dashboard() {
         if  (params.id) {
             Teacher teacher = Teacher.findByTeacherId(params.id)
-            [teacher: teacher, freeSlots:getAllSlotsOfTheWeek(new Date())]
+            def freeSlots = getFreeSlotsForTeacher(teacher)
+            if (!freeSlots) {
+                freeSlots = getAllSlotsOfTheWeek(new Date())
+            }
+            [teacher: teacher, freeSlots:freeSlots]
         } else {
             redirect(action:"index")
         }
@@ -49,14 +54,20 @@ class TeacherController {
             render "<span> No valid teacher data found </span>"
             return
         }
-        SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
+        SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//EEE MMM dd HH:mm:ss zzz yyyy
+        SimpleDateFormat sdf2 = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
 
         if(params.freeSlots) {
             def freeSlots = params.freeSlots
             
             freeSlots.each {
                 Slot aSlot = new Slot()
-                aSlot.slotDate = sdf.parse(it.split("#")[0])
+                try {
+                    aSlot.slotDate = sdf1.parse(it.split("#")[0])
+                } catch (Exception ex) {
+                    aSlot.slotDate = sdf2.parse(it.split("#")[0])
+                }
+                
                 aSlot.isRegistered = true
                 aSlot.isBooked = false
                 int slotNumber = Integer.parseInt(it.split("#")[1])
@@ -75,9 +86,7 @@ class TeacherController {
     private def List<Slot> getAllSlotsOfTheDay() {
         return getAllSlotsOfTheDayByDay(new Date());
     }
-    
-    
-    
+
     private def List<Slot> getAllSlotsOfTheDayByDay(Date aDate) {
         List<Slot> slotsOfTheDay = [];
         
@@ -123,8 +132,40 @@ class TeacherController {
             slot.slotDate = aDate
             slot.timeFrom = SLOT_START[(it - 1)]
             slot.timeTo = SLOT_END[(it - 1)]
-            freeSlots << alot
+            freeSlots << slot
             
         }
+        
+        return freeSlots
+    }
+    
+    private def getFreeSlotsForTeacher(Teacher aTeacher) {
+        def weeklySlots = aTeacher.weeklySlots;
+        def freeSlots = []
+        
+        Date oldDate = null;
+        String dateString = null
+        def bookedSlot = []
+        aTeacher.weeklySlots.each {
+             
+            def newDate = it.slotDate.toString().split(" ")[0]
+            if  (!oldDate) {
+                oldDate = it.slotDate
+                dateString = newDate
+                bookedSlot << it
+            } else if (dateString.equals(newDate)) {
+                bookedSlot << it
+            } else {
+                def newFreeSlots = getFreeSlots(bookedSlot, oldDate)
+                newFreeSlots.each{
+                    freeSlots << it
+                }
+                
+                bookedSlot << it
+                oldDate = it.slotDate
+            }
+        }
+        return freeSlots;
+        
     }
 }

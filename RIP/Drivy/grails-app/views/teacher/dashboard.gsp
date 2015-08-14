@@ -62,7 +62,7 @@
                                 <tr><td>
                                 <span class="button-checkbox">
                                     <button type="button" class="btn btn-default">${slot.slotDate} : ${slot.timeFrom}-${slot.timeTo}</button>
-                                    <input type="checkbox" class="hidden" name="freeSlots" value="${slot.slotDate}#${slot.slotNumber}"/>
+                                    <input type="checkbox"  name="freeSlots" value="${slot.slotDate}#${slot.slotNumber}"/>
                                 </span>
                                 </td></tr>
                             </g:each>
