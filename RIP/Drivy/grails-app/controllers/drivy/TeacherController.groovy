@@ -59,23 +59,21 @@ class TeacherController {
                 Slot aSlot = new Slot()
                 aSlot.slotDate = sdf.parse(it.split("#")[0])
                 aSlot.isRegistered = true
-                aSlot.isRegistered = false
+                aSlot.isBooked = false
                 int slotNumber = Integer.parseInt(it.split("#")[1])
                 aSlot.slotNumber = slotNumber
                 aSlot.timeFrom = SLOT_START[slotNumber  - 1]
                 aSlot.timeTo = SLOT_END[slotNumber  - 1]
                 teacher.addToWeeklySlots(aSlot) 
-                /*if (!aSlot.hasErrors()) {
-                    renderString.append(aSlot).append(" Has errors <br/>")
-                }*/
-                
-                renderString.append(aSlot).append("<br/>")
-                teacher.save(flush: true)
-                aSlot.save(flush: true)
             }
             
         }
         
+        teacher.save(flush: true)
+        
+        /*teacher.weeklySlots.each {
+            renderString.append(it).append("<br/>")
+        }*/
         render (renderString.toString())
     }
     

@@ -31,7 +31,9 @@
                             
                             <g:if test="${teacher.weeklySlots != null}">
                                 <g:each var="slot" in="${teacher.weeklySlots}">
-                                    <span class="label label-success">${slot.slotDate} : ${slot.timeFrom}-${slot.timeTo}</span>
+                                    <span class="button-checkbox">
+                                        <button type="button" class="btn btn-default">${slot.slotDate} : ${slot.timeFrom}-${slot.timeTo}</button>
+                                    </span>
                                 </g:each>
                             </g:if>
                             
