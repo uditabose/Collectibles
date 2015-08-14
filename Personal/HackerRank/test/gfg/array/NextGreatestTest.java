@@ -62,4 +62,15 @@ public class NextGreatestTest {
         
     }
     
+    @Test
+    public void testNextGreatest2() {
+        System.out.println("nextGreatest");
+        int[] input = {7, 4, 5, 5, 9, 2, 5, 2, 5, 7};
+        NextGreatest instance = new NextGreatest();
+        int[] expResult = {9,5,9,9,-1,5,7,5,7,-1};
+        int[] result = instance.nextGreatest(input);
+        assertArrayEquals(expResult, result);
+        
+    }
+    
 }
