@@ -55,7 +55,6 @@ class TeacherController {
             def freeSlots = params.freeSlots
             
             freeSlots.each {
-                
                 Slot aSlot = new Slot()
                 aSlot.slotDate = sdf.parse(it.split("#")[0])
                 aSlot.isRegistered = true
@@ -70,10 +69,6 @@ class TeacherController {
         }
         
         teacher.save(flush: true)
-        
-        /*teacher.weeklySlots.each {
-            renderString.append(it).append("<br/>")
-        }*/
         render (renderString.toString())
     }
     

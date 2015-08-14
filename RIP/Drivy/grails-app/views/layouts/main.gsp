@@ -8,8 +8,8 @@
         <asset:stylesheet src="application.css"/>
         <asset:javascript src="jquery.js"/>
         <asset:javascript src="bootstrap.js"/>
-        <asset:javascript src="bootstrap.css"/>
-        <asset:javascript src="bootstrap-theme.css"/>
+        <asset:stylesheet src="bootstrap.css"/>
+        <asset:stylesheet src="bootstrap-theme.css"/>
 
         <g:layoutHead/>
     </head>

@@ -30,11 +30,18 @@
                         <div class="panel-body">
                             
                             <g:if test="${teacher.weeklySlots != null}">
+                                <table>
                                 <g:each var="slot" in="${teacher.weeklySlots}">
+                                    <tr>
+                                    <td>
                                     <span class="button-checkbox">
                                         <button type="button" class="btn btn-default">${slot.slotDate} : ${slot.timeFrom}-${slot.timeTo}</button>
                                     </span>
+                                    </td>
+                                    </tr>
+                                    
                                 </g:each>
+                                </table>
                             </g:if>
                             
                         </div>
@@ -50,15 +57,20 @@
                         <g:form name="update" url="[controller:'teacher',action:'update']" >
                             <input type="hidden" name="teacherId" value="${teacher.teacherId}" >
                         <g:if test="${freeSlots != null}">
+                            <table>
                             <g:each var="slot" in="${freeSlots}">
+                                <tr><td>
                                 <span class="button-checkbox">
                                     <button type="button" class="btn btn-default">${slot.slotDate} : ${slot.timeFrom}-${slot.timeTo}</button>
                                     <input type="checkbox" class="hidden" name="freeSlots" value="${slot.slotDate}#${slot.slotNumber}"/>
                                 </span>
+                                </td></tr>
                             </g:each>
+                            <tr><td>
                             <g:actionSubmit action="update" value="Save Updates" />
-                            
+                            </td></tr>
                         </g:if>
+                            </table>
                         </g:form>
                     </div>
                 </div>
